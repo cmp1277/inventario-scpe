@@ -1,0 +1,76 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ titulo or 'Registrar Salida' }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <!-- Título dinámico -->
+                    <h4 class="mb-0"><i class="fas fa-dolly-flatbed me-2"></i> {{ titulo or 'Registrar Salida de Material' }}</h4>
+                </div>
+                <div class="card-body p-4">
+                    
+                    <!-- Mensajes Flash -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+
+                        <!-- Selección de Producto -->
+                        <div class="mb-3">
+                            {{ form.producto_id.label(class="form-label fw-bold") }}
+                            {{ form.producto_id(class="form-select form-select-lg") }}
+                            {% if form.producto_id.errors %}
+                                <div class="text-danger small">{{ form.producto_id.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Cantidad -->
+                        <div class="mb-3">
+                            {{ form.cantidad_salida.label(class="form-label fw-bold") }}
+                            {{ form.cantidad_salida(class="form-control form-control-lg", type="number", step="0.01", min="0") }}
+                        </div>
+
+                        <div class="row">
+                            <!-- Funcionario -->
+                            <div class="col-md-6 mb-3">
+                                {{ form.nombre_funcionario.label(class="form-label fw-bold") }}
+                                {{ form.nombre_funcionario(class="form-control", placeholder="Nombre completo") }}
+                            </div>
+                            <!-- Código -->
+                            <div class="col-md-6 mb-3">
+                                {{ form.codigo_funcionario.label(class="form-label fw-bold") }}
+                                {{ form.codigo_funcionario(class="form-control", placeholder="ID / Carnet") }}
+                            </div>
+                        </div>
+
+                        <!-- Imagen (Opcional) -->
+                        <div class="mb-4">
+                            {{ form.imagen_salida.label(class="form-label fw-bold") }}
+                            {{ form.imagen_salida(class="form-control") }}
+                            <small class="text-muted">Requerido solo para POZO 57</small>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-success btn-lg shadow-sm") }}
+                            <a href="{{ url_for('main.inventario') }}" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

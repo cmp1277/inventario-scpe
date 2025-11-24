@@ -1,0 +1,92 @@
+{% extends "layout.html" %}
+
+{% block title %}Reporte por Subalmacén{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Encabezado y Botones de Exportación -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <h2 class="h3 mb-0 text-dark">
+            <i class="fas fa-warehouse text-primary me-2"></i>Reporte de Inventario por Subalmacén
+        </h2>
+        <div class="btn-group shadow-sm">
+            <a href="{{ url_for('main.exportar_reporte_por_subalmacen_pdf') }}" class="btn btn-danger">
+                <i class="fas fa-file-pdf me-1"></i> PDF
+            </a>
+            <a href="{{ url_for('main.exportar_reporte_por_subalmacen_excel') }}" class="btn btn-success">
+                <i class="fas fa-file-excel me-1"></i> Excel
+            </a>
+        </div>
+    </div>
+
+    {% for subalmacen, data in reporte.items() %}
+    <div class="card mb-5 shadow border-0">
+        <!-- Encabezado de Tarjeta con Nombre del Subalmacén -->
+        <div class="card-header bg-white border-bottom py-3 border-start border-5 border-warning rounded-top">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-uppercase text-dark">
+                    <i class="fas fa-boxes me-2 text-warning"></i> {{ subalmacen }}
+                </h5>
+                <span class="badge bg-light text-dark border">
+                    {{ data.productos|length }} productos
+                </span>
+            </div>
+        </div>
+        
+        <div class="card-body p-0">
+            {% if data.productos %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="bg-light text-secondary">
+                        <tr>
+                            <th class="py-3 ps-4">Código</th>
+                            <th class="py-3">Nombre</th>
+                            <th class="py-3 text-center">Cantidad</th>
+                            <th class="py-3 text-end">Precio Unit. (Bs)</th>
+                            <th class="py-3 text-end pe-4">Valor Total (Bs)</th>
+                            <th class="py-3">Unidad</th>
+                            <th class="py-3">Diámetro</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producto in data.productos %}
+                        <tr>
+                            <td class="fw-bold text-primary ps-4">{{ producto.codigo }}</td>
+                            <td class="fw-bold text-dark">{{ producto.nombre }}</td>
+                            <td class="text-center">
+                                <span class="badge {% if producto.cantidad <= producto.stock_minimo %}bg-danger{% else %}bg-success{% endif %} rounded-pill px-3">
+                                    {{ producto.cantidad }}
+                                </span>
+                            </td>
+                            <td class="text-end text-muted">Bs. {{ "%.2f"|format(producto.precio) }}</td>
+                            <td class="text-end fw-bold text-dark pe-4">Bs. {{ "%.2f"|format(producto.total_value) }}</td>
+                            <td class="text-muted small">{{ producto.unidad }}</td>
+                            <td class="text-muted small">{{ producto.diametro or '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <!-- Pie de Tabla con Totales -->
+                    <tfoot class="bg-light border-top">
+                        <tr>
+                            <td colspan="4" class="text-end py-3">
+                                <span class="text-uppercase text-muted small fw-bold me-2">Total Valor {{ subalmacen }}:</span>
+                            </td>
+                            <td class="text-end py-3 pe-4">
+                                <span class="fw-bold text-success fs-5">Bs. {{ "%.2f"|format(data.total_value) }}</span>
+                            </td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                <p class="text-muted mb-0">No hay productos registrados en este subalmacén.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

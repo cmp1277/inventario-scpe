@@ -1,0 +1,113 @@
+{% extends "layout.html" %}
+
+{% block title %}Reporte de Salidas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Encabezado y Botones de Exportación -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <h2 class="h3 mb-0 text-dark">
+            <i class="fas fa-clipboard-list text-primary me-2"></i>Reporte de Salidas por Funcionario
+        </h2>
+        <div class="btn-group shadow-sm">
+            <a href="{{ url_for('main.exportar_reporte_salidas_pdf') }}" class="btn btn-danger">
+                <i class="fas fa-file-pdf me-1"></i> PDF
+            </a>
+            <a href="{{ url_for('main.exportar_reporte_salidas_excel') }}" class="btn btn-success">
+                <i class="fas fa-file-excel me-1"></i> Excel
+            </a>
+        </div>
+    </div>
+
+    {% for funcionario, lista_salidas in reporte.items() %}
+    <div class="card mb-4 shadow border-0">
+        <!-- Encabezado de Tarjeta con Nombre del Funcionario -->
+        <div class="card-header bg-white border-bottom py-3">
+            <h5 class="mb-0 fw-bold text-uppercase text-primary">
+                <i class="fas fa-user-circle me-2"></i> {{ funcionario }}
+            </h5>
+        </div>
+        
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="bg-light text-secondary">
+                        <tr>
+                            <th class="py-3 ps-4">Producto</th>
+                            <th class="py-3 text-center">Cantidad</th>
+                            <th class="py-3 text-end">Precio U.</th>
+                            <th class="py-3 text-center">Fecha</th>
+                            <th class="py-3 text-center pe-4" style="width: 220px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set ns = namespace(total=0) %}
+                        {% for salida in lista_salidas %}
+                        {% set ns.total = ns.total + (salida.cantidad_salida * salida.precio_en_bs) %}
+                        <tr>
+                            <td class="fw-bold text-dark ps-4">{{ salida.producto.nombre }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-info text-dark rounded-pill px-3">
+                                    {{ salida.cantidad_salida }}
+                                </span>
+                            </td>
+                            <td class="text-end text-muted">Bs. {{ "%.2f"|format(salida.precio_en_bs) }}</td>
+                            <td class="text-center small text-muted">
+                                {{ salida.fecha_salida.strftime('%d/%m/%Y %H:%M') }}
+                            </td>
+                            
+                            <!-- COLUMNA DE ACCIONES (REDISENADA) -->
+                            <td class="text-center pe-4">
+                                {% if current_user.is_authenticated and current_user.is_admin() %}
+                                    <!-- Usamos flex para separar los botones visualmente -->
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <!-- Botón Editar (Azul Sólido) -->
+                                        <a href="{{ url_for('main.editar_salida', salida_id=salida.id) }}" 
+                                           class="btn btn-primary btn-sm px-3 shadow-sm" 
+                                           title="Editar">
+                                            <i class="fas fa-pen"></i> Editar
+                                        </a>
+                                        
+                                        <!-- Botón Eliminar (Rojo Sólido) -->
+                                        <form action="{{ url_for('main.eliminar_salida', salida_id=salida.id) }}" 
+                                              method="POST" 
+                                              onsubmit="return confirm('¿Estás seguro de eliminar esta salida? El stock será devuelto al almacén.');">
+                                            <button type="submit" class="btn btn-danger btn-sm px-3 shadow-sm" title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% else %}
+                                    <span class="badge bg-light text-secondary border">
+                                        <i class="fas fa-lock"></i> Lectura
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <!-- Pie de Tabla con Totales -->
+                    <tfoot class="bg-light border-top">
+                        <tr>
+                            <td colspan="5" class="text-end pe-4 py-3">
+                                <span class="text-muted me-2">Total Valor Salidas:</span>
+                                <span class="fw-bold text-success fs-5">Bs. {{ "%.2f"|format(ns.total) }}</span>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-secondary text-center p-5 shadow-sm rounded-3">
+        <i class="fas fa-folder-open fa-3x mb-3 text-muted"></i>
+        <h4 class="text-muted">No hay registros de salidas</h4>
+        <p class="mb-3">Aún no se han registrado movimientos de salida en el sistema.</p>
+        <a href="{{ url_for('main.salida') }}" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-2"></i> Registrar Nueva Salida
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

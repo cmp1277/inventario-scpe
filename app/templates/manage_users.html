@@ -1,0 +1,161 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Gestionar Usuarios</h2>
+    <p class="text-muted">Aquí puedes editar o eliminar usuarios. (Admin Rol 1 | Empleado Rol 2)</p>
+
+    <!-- Bloque para mostrar formulario solo si se solicita editar/crear -->
+    {% if form %}
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-warning text-dark">
+            <!-- Si existe edit_user mostramos su nombre, si no, es registro nuevo -->
+            <h5>{% if edit_user %}Editar Usuario: {{ edit_user.username }}{% else %}Nuevo Usuario{% endif %}</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.username.label(class="form-label") }}
+                        {{ form.username(class="form-control") }}
+                        {% if form.username.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.username.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.email.label(class="form-label") }}
+                        {{ form.email(class="form-control") }}
+                        {% if form.email.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.email.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Agregamos selección de ROL si el formulario lo tiene -->
+                {% if form.rol %}
+                <div class="mb-3">
+                    {{ form.rol.label(class="form-label") }}
+                    {{ form.rol(class="form-select") }}
+                </div>
+                {% endif %}
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.password.label(class="form-label") }}
+                        {{ form.password(class="form-control") }}
+                        {% if form.password.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.password.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <!-- Usamos confirm_password para coincidir con forms.py estándar -->
+                        {% if form.confirm_password %}
+                            {{ form.confirm_password.label(class="form-label") }}
+                            {{ form.confirm_password(class="form-control") }}
+                            {% if form.confirm_password.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.confirm_password.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% elif form.password2 %}
+                             <!-- Fallback por si tu formulario aun se llama password2 -->
+                            {{ form.password2.label(class="form-label") }}
+                            {{ form.password2(class="form-control") }}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="mt-2">
+                    {{ form.submit(class="btn btn-primary") }}
+                    <a href="{{ url_for('main.manage_users') }}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Lista de Usuarios Registrados</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if users %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario</th>
+                            <th>Email</th>
+                            <th>Rol</th>
+                            <!-- ELIMINADO: Columna Fecha de Registro que causaba error -->
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td class="fw-bold">{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                {% if user.rol == 1 %}
+                                    <span class="badge bg-danger">Administrador</span>
+                                {% else %}
+                                    <span class="badge bg-info text-dark">Empleado</span>
+                                {% endif %}
+                            </td>
+                            <!-- ELIMINADO: Celda de fecha que causaba error -->
+                            <td>
+                                <!-- Botón Eliminar -->
+                                <form method="POST" class="d-inline" onsubmit="return confirm('¿Seguro que deseas eliminar a {{ user.username }}?');">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                                    {% if user.rol != 1 %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                            <i class="fas fa-trash-alt"></i> Eliminar
+                                        </button>
+                                    {% else %}
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="No se puede borrar al Admin">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                    {% endif %}
+                                </form>
+                                
+                                <!-- Botón Editar -->
+                                <form method="POST" class="d-inline">
+                                    <input type="hidden" name="action" value="edit">
+                                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Editar">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-3 text-center text-muted">
+                No hay usuarios registrados (aparte de ti).
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

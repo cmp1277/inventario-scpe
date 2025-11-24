@@ -1,0 +1,100 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">{{ titulo }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.codigo.label(class="form-label") }}
+                        {{ form.codigo(class="form-control") }}
+                        {% for error in form.codigo.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.nombre.label(class="form-label") }}
+                        {{ form.nombre(class="form-control") }}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.cantidad.label(class="form-label") }}
+                            {{ form.cantidad(class="form-control") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.stock_minimo.label(class="form-label") }}
+                            {{ form.stock_minimo(class="form-control") }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.precio.label(class="form-label") }}
+                            {{ form.precio(class="form-control") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.proveedor.label(class="form-label") }}
+                            {{ form.proveedor(class="form-control") }}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.subalmacen.label(class="form-label") }}
+                            {{ form.subalmacen(class="form-control") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.unidad.label(class="form-label") }}
+                            {{ form.unidad(class="form-control") }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.diametro.label(class="form-label") }}
+                        {{ form.diametro(class="form-control") }}
+                    </div>
+
+                    <div class="mb-3" id="imagen_ingreso_container" style="display: {% if form.subalmacen.data == 'POZO 57' or (producto and producto.subalmacen == 'POZO 57') %}block{% else %}none{% endif %}">
+                        {{ form.imagen_ingreso.label(class="form-label") }}
+                        <div class="input-group">
+                            <input type="file" class="form-control" id="imagen_ingreso_file" name="imagen_ingreso" accept="image/*" capture="environment">
+                            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('imagen_ingreso_file').click()">📷</button>
+                        </div>
+                        <small class="form-text text-muted">Suba una fotografía del item para POZO 57 (puede usar la cámara del dispositivo).</small>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        {{ form.submit(class="btn btn-success btn-lg") }}
+                        <a href="{{ url_for('main.inventario') }}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const subalmacenSelect = document.querySelector('select[name="subalmacen"]');
+    const imagenContainer = document.getElementById('imagen_ingreso_container');
+
+    if (subalmacenSelect && imagenContainer) {
+        subalmacenSelect.addEventListener('change', function() {
+            if (this.value === 'POZO 57') {
+                imagenContainer.style.display = 'block';
+            } else {
+                imagenContainer.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

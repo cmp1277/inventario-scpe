@@ -1,0 +1,100 @@
+{% extends "layout.html" %}
+
+{% block title %}Top Productos{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    
+    <!-- Encabezado Dinámico y Botones -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <h2 class="h3 mb-0 text-dark">
+            {% if tipo == 'agregados' %}
+                <i class="fas fa-arrow-circle-up text-success me-2"></i>Top 10 Productos Agregados
+            {% else %}
+                <i class="fas fa-arrow-circle-down text-danger me-2"></i>Top 10 Productos Salidos
+            {% endif %}
+        </h2>
+        
+        <!-- Los botones de exportación dependen del tipo de reporte actual -->
+        <div class="btn-group shadow-sm">
+            <button class="btn btn-danger" disabled title="Exportación de este reporte próximamente">
+                <i class="fas fa-file-pdf me-1"></i> PDF
+            </button>
+            <button class="btn btn-success" disabled title="Exportación de este reporte próximamente">
+                <i class="fas fa-file-excel me-1"></i> Excel
+            </button>
+        </div>
+    </div>
+
+    <div class="card shadow border-0">
+        <div class="card-header bg-white border-bottom py-3">
+            <h5 class="mb-0 fw-bold text-uppercase text-secondary">
+                <i class="fas fa-chart-bar me-2"></i> Ranking de Movimientos
+            </h5>
+        </div>
+        
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="bg-primary text-white">
+                        <tr>
+                            <th class="py-3 ps-4">#</th>
+                            <th class="py-3">Código</th>
+                            <th class="py-3">Nombre</th>
+                            <th class="py-3">Subalmacén</th>
+                            <th class="py-3 text-center">Cantidad Total</th>
+                            <th class="py-3 text-end">Precio Unitario (Bs)</th>
+                            <th class="py-3 text-end pe-4">Valor Total (Bs)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producto in productos %}
+                        <tr>
+                            <td class="ps-4 fw-bold text-muted">{{ loop.index }}</td>
+                            <td class="fw-bold text-primary">{{ producto.codigo }}</td>
+                            <td class="fw-bold">{{ producto.nombre }}</td>
+                            <td>
+                                <span class="badge {% if producto.subalmacen == 'POZO 57' %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+                                    {{ producto.subalmacen }}
+                                </span>
+                            </td>
+                            
+                            <!-- Lógica para mostrar la cantidad correcta según el reporte -->
+                            <td class="text-center">
+                                {% if tipo == 'salidos' %}
+                                    <span class="badge bg-danger rounded-pill px-3 fs-6">
+                                        {{ producto.total_salida }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-success rounded-pill px-3 fs-6">
+                                        {{ producto.cantidad }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="text-end text-muted">Bs. {{ "%.2f"|format(producto.precio) }}</td>
+                            
+                            <!-- Cálculo del Valor Total de ese movimiento -->
+                            <td class="text-end pe-4 fw-bold text-dark">
+                                {% if tipo == 'salidos' %}
+                                    Bs. {{ "%.2f"|format(producto.total_salida * producto.precio) }}
+                                {% else %}
+                                    Bs. {{ "%.2f"|format(producto.cantidad * producto.precio) }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="fas fa-chart-pie fa-3x mb-3 d-block"></i>
+                                No hay datos suficientes para generar el ranking.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

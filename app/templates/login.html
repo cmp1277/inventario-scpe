@@ -1,0 +1,189 @@
+{% extends "layout.html" %}
+
+{% block title %}Iniciar Sesión{% endblock %}
+
+{% block content %}
+<style>
+    /* --- FONDO Y LLUVIA (Se mantiene igual) --- */
+    body {
+        background: linear-gradient(to bottom, #00416A, #E4E5E6);
+        min-height: 100vh;
+        position: relative;
+        /* Quitamos overflow:hidden para permitir scroll si la pantalla es muy pequeña */
+        overflow-y: auto; 
+    }
+
+    .rain-container {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        z-index: 0; pointer-events: none;
+        overflow: hidden; /* La lluvia sí se corta al borde */
+    }
+
+    .drop {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.6);
+        width: 2px; height: 15px; top: -20px;
+        border-radius: 10px; opacity: 0.8;
+        animation: fall linear infinite;
+        box-shadow: 0 0 4px rgba(255, 255, 255, 0.8); 
+    }
+
+    @keyframes fall {
+        0% { transform: translateY(-20px); opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { transform: translateY(105vh); opacity: 0; }
+    }
+
+    /* --- TARJETA DE LOGIN --- */
+    .login-card-container {
+        position: relative;
+        z-index: 10;
+        /* Ajustamos el padding para que no quede pegado en móviles */
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+
+    .login-card {
+        animation: slideInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(5px);
+        position: relative; /* Necesario para posicionar las alertas absolutas */
+    }
+
+    @keyframes slideInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .logo-img { transition: transform 0.5s ease; }
+    .logo-img:hover { transform: rotate(5deg) scale(1.1); }
+
+    /* --- NUEVO: ALERTAS FLOTANTES --- */
+    /* Esto hace que el mensaje aparezca encima sin empujar el formulario */
+    .alert-floating-container {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        z-index: 100;
+    }
+    
+    .alert-custom {
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        font-size: 0.9rem;
+        border: none;
+        animation: fadeInDown 0.5s ease;
+    }
+
+    @keyframes fadeInDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<!-- GENERADOR DE LLUVIA -->
+<div class="rain-container">
+    {% for i in range(50) %}
+    <div class="drop" style="
+        left: {{ range(1, 100) | random }}%; 
+        animation-duration: {{ range(20, 50) | random / 10.0 }}s; 
+        animation-delay: {{ range(0, 50) | random / 10.0 }}s;
+        opacity: {{ range(3, 7) | random / 10.0 }};
+    "></div>
+    {% endfor %}
+</div>
+
+<div class="container login-card-container">
+    <!-- Usamos min-height 80vh para centrar pero permitir espacio -->
+    <div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+        <div class="col-md-6 col-lg-4">
+            
+            <div class="card border-0 shadow-lg rounded-3 overflow-hidden login-card">
+                
+                <!-- CONTENEDOR FLOTANTE DE MENSAJES -->
+                <div class="alert-floating-container">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show alert-custom" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                <!-- Encabezado Compacto -->
+                <div class="card-header bg-primary bg-gradient text-white text-center py-4">
+                    <div class="mb-2">
+                        <img src="{{ url_for('static', filename='logo.jpg') }}" 
+                             alt="Logo SCPE" 
+                             class="img-fluid rounded-circle shadow-sm bg-white p-1 logo-img" 
+                             style="width: 90px; height: 90px; object-fit: contain;">
+                    </div>
+                    <h4 class="mb-0 fw-bold">Bienvenido</h4>
+                    <p class="small text-white-50 mb-0">Sistema de Control de Inventarios</p>
+                </div>
+
+                <div class="card-body p-4">
+                    <!-- Espacio extra arriba por si sale una alerta flotante -->
+                    <div style="height: 10px;"></div>
+
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+
+                        <div class="mb-3">
+                            {{ form.username.label(class="form-label text-muted small fw-bold") }}
+                            <div class="input-group shadow-sm">
+                                <span class="input-group-text bg-light border-end-0 text-primary"><i class="fas fa-user"></i></span>
+                                {{ form.username(class="form-control border-start-0 bg-light", placeholder="Usuario") }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.password.label(class="form-label text-muted small fw-bold") }}
+                            <div class="input-group shadow-sm">
+                                <span class="input-group-text bg-light border-end-0 text-primary"><i class="fas fa-lock"></i></span>
+                                {{ form.password(class="form-control border-start-0 bg-light", placeholder="Contraseña") }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            {{ form.remember_me(class="form-check-input") }}
+                            {{ form.remember_me.label(class="form-check-label text-muted small") }}
+                        </div>
+
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary btn-lg fw-bold shadow") }}
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card-footer bg-light text-center py-3 border-top-0">
+                    <small class="text-muted">¿Primera vez? <a href="{{ url_for('main.register') }}" class="text-decoration-none fw-bold">Regístrate</a></small>
+                </div>
+            </div>
+            
+            <div class="text-center mt-3 text-white-50 small">
+                &copy; 2025 Sistema de Control de Pozos y Estaciones
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Script para ocultar alertas automáticamente después de 4 segundos -->
+<script>
+    setTimeout(function() {
+        let alerts = document.querySelectorAll('.alert-custom');
+        alerts.forEach(function(alert) {
+            let bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        });
+    }, 4000); // 4000 milisegundos = 4 segundos
+</script>
+{% endblock %}

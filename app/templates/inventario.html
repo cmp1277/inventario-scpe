@@ -1,0 +1,207 @@
+{% extends "layout.html" %}
+
+{% block title %}Inventario General{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- 1. ENCABEZADO PRINCIPAL (HERO SECTION) -->
+    <!-- CORRECCIÓN: z-index: 50 y position: relative. 
+         Al tener z-index positivo, este bloque SIEMPRE estará por encima de los bloques estáticos (como la búsqueda). -->
+    <div class="card border-0 shadow-sm mb-4" style="position: relative; z-index: 50; overflow: visible;">
+        <div class="card-body p-4 border-start border-5 border-primary rounded" style="overflow: visible;">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h1 class="h3 fw-bold text-primary mb-1">
+                        <i class="fas fa-industry me-2"></i> SECCIÓN CONTROL DE POZOS Y ESTACIONES
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Inventario Actual: <strong>{{ productos|length }} productos registrados</strong>
+                    </p>
+                </div>
+                
+                <!-- Botones de Acción (Solo Admin) -->
+                {% if current_user.is_authenticated and current_user.is_admin() %}
+                <div class="d-flex gap-2 mt-3 mt-md-0 align-items-center">
+                    <!-- Botón Gestión Usuarios -->
+                    <a href="{{ url_for('main.manage_users') }}" class="btn btn-outline-primary shadow-sm">
+                        <i class="fas fa-users-cog me-1"></i> Usuarios
+                    </a>
+
+                    <!-- Dropdown Reportes -->
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-file-export me-1"></i> Reportes
+                        </button>
+                        <!-- Menú con z-index alto para flotar sobre todo -->
+                        <ul class="dropdown-menu shadow border-0" style="z-index: 1000; margin-top: 5px;">
+                            <!-- Exportación -->
+                            <li><h6 class="dropdown-header text-uppercase small fw-bold">Exportar Archivos</h6></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.exportar_excel') }}"><i class="fas fa-file-excel text-success me-2"></i> Excel (.xlsx)</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.exportar_pdf') }}"><i class="fas fa-file-pdf text-danger me-2"></i> PDF</a></li>
+                            
+                            <li><hr class="dropdown-divider"></li>
+                            
+                            <!-- Reportes en Pantalla -->
+                            <li><h6 class="dropdown-header text-uppercase small fw-bold">Ver en Pantalla</h6></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.reporte_salidas') }}">Salidas por Funcionario</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.reporte_por_item') }}">Salidas por Producto</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.reporte_top_productos_in') }}">Top Productos Agregados</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.reporte_top_productos_out') }}">Top Productos Salidos</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.reporte_por_subalmacen') }}">Por Subalmacén</a></li>
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. BARRA DE BÚSQUEDA -->
+    <!-- CORRECCIÓN CRÍTICA: Se eliminó 'position: relative' y 'z-index'. 
+         Al ser estático (default), cualquier elemento posicionado (como el encabezado de arriba) 
+         se dibujará AUTOMÁTICAMENTE por encima de esto. -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="POST" class="row g-2 align-items-center">
+                {{ form.hidden_tag() }}
+                <div class="col-md-10">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                        {{ form.busqueda(class="form-control border-start-0", placeholder="Buscar por Nombre, Código o Descripción...") }}
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    {{ form.submit(class="btn btn-info text-white fw-bold w-100") }}
+                </div>
+            </form>
+            {% if busqueda %}
+                <div class="mt-2 text-muted small">
+                    <i class="fas fa-filter"></i> Resultados para: <strong>"{{ busqueda }}"</strong>
+                    <a href="{{ url_for('main.inventario') }}" class="text-decoration-none ms-2">(Ver todos)</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 3. ALERTAS DE STOCK BAJO -->
+    {% if alertas %}
+    <div class="alert alert-warning shadow-sm mb-4 border-warning d-flex align-items-center" role="alert">
+        <i class="fas fa-exclamation-triangle fa-2x me-3 text-warning"></i>
+        <div>
+            <h5 class="alert-heading fw-bold mb-1">¡Atención! Stock Crítico</h5>
+            <p class="mb-0">
+                Los siguientes productos están por debajo del mínimo ({{ config.get('STOCK_MINIMO', 10) }}):
+                <span class="fw-bold">
+                {% for producto in alertas %}
+                    {{ producto.nombre }} ({{ producto.cantidad }}){% if not loop.last %}, {% endif %}
+                {% endfor %}
+                </span>
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 4. TARJETAS DE VALOR TOTAL -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100 bg-primary bg-gradient text-white">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase text-white-50 mb-1">Valor Total SCPE</h6>
+                        <h3 class="fw-bold mb-0">Bs. {{ "%.2f"|format(productos | selectattr('subalmacen', 'equalto', 'SCPE') | map(attribute='total_value') | sum) }}</h3>
+                    </div>
+                    <i class="fas fa-wallet fa-3x text-white-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100 bg-success bg-gradient text-white">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase text-white-50 mb-1">Valor Total POZO 57</h6>
+                        <h3 class="fw-bold mb-0">Bs. {{ "%.2f"|format(productos | selectattr('subalmacen', 'equalto', 'POZO 57') | map(attribute='total_value') | sum) }}</h3>
+                    </div>
+                    <i class="fas fa-chart-line fa-3x text-white-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. TABLA DE PRODUCTOS -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3 border-bottom">
+            <h5 class="mb-0 fw-bold text-secondary"><i class="fas fa-list me-2"></i>Detalle de Inventario</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="py-3 ps-3">Código</th>
+                            <th class="py-3">Nombre</th>
+                            <th class="py-3 text-center">Cant.</th>
+                            <th class="py-3 text-end">Precio (Bs)</th>
+                            <th class="py-3 text-end">Total (Bs)</th>
+                            <th class="py-3">Proveedor</th>
+                            <th class="py-3">Subalmacén</th>
+                            <th class="py-3">Unidad</th>
+                            <th class="py-3">Diám.</th>
+                            <th class="py-3 text-center pe-3">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producto in productos %}
+                        <tr {% if producto.necesita_alerta() %} class="table-danger" {% endif %}>
+                            <td class="fw-bold small ps-3">{{ producto.codigo }}</td>
+                            <td>
+                                <span class="fw-bold">{{ producto.nombre }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge {% if producto.necesita_alerta() %}bg-danger{% else %}bg-success{% endif %} rounded-pill">
+                                    {{ producto.cantidad }}
+                                </span>
+                            </td>
+                            <td class="text-end small">{{ "%.2f"|format(producto.precio) }}</td>
+                            <td class="text-end fw-bold small">{{ "%.2f"|format(producto.total_value) }}</td>
+                            <td class="small text-muted">{{ producto.proveedor or '-' }}</td>
+                            <td>
+                                <span class="badge bg-secondary">{{ producto.subalmacen }}</span>
+                            </td>
+                            <td class="small">{{ producto.unidad }}</td>
+                            <td class="small">{{ producto.diametro or '-' }}</td>
+                            <td class="text-center pe-3" style="min-width: 180px;">
+                                {% if current_user.is_authenticated and current_user.is_admin() %}
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('main.agregar_editar', producto_id=producto.id) }}" class="btn btn-outline-primary" title="Editar">
+                                        <i class="fas fa-pencil-alt"></i> Editar
+                                    </a>
+                                    <form action="{{ url_for('main.eliminar', producto_id=producto.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar este producto?');">
+                                        <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                            <i class="fas fa-trash-alt"></i> Eliminar
+                                        </button>
+                                    </form>
+                                </div>
+                                {% else %}
+                                <span class="badge bg-light text-muted border">Solo Lectura</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="10" class="text-center py-5 text-muted">
+                                <i class="fas fa-box-open fa-3x mb-3 d-block"></i>
+                                No se encontraron productos.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-light text-end text-muted small">
+            Mostrando {{ productos|length }} registros
+        </div>
+    </div>
+</div>
+{% endblock %}
