@@ -5,9 +5,6 @@
 {% block content %}
 <div class="container-fluid mt-4">
 
-    <!-- 1. ENCABEZADO PRINCIPAL (HERO SECTION) -->
-    <!-- CORRECCIÓN: z-index: 50 y position: relative. 
-         Al tener z-index positivo, este bloque SIEMPRE estará por encima de los bloques estáticos (como la búsqueda). -->
     <div class="card border-0 shadow-sm mb-4" style="position: relative; z-index: 50; overflow: visible;">
         <div class="card-body p-4 border-start border-5 border-primary rounded" style="overflow: visible;">
             <div class="d-flex justify-content-between align-items-center flex-wrap">
@@ -20,35 +17,41 @@
                     </p>
                 </div>
                 
-                <!-- Botones de Acción (Solo Admin) -->
                 {% if current_user.is_authenticated and current_user.is_admin() %}
                 <div class="d-flex gap-2 mt-3 mt-md-0 align-items-center">
-                    <!-- Botón Gestión Usuarios -->
                     <a href="{{ url_for('main.manage_users') }}" class="btn btn-outline-primary shadow-sm">
                         <i class="fas fa-users-cog me-1"></i> Usuarios
                     </a>
 
-                    <!-- Dropdown Reportes -->
                     <div class="dropdown">
                         <button class="btn btn-secondary dropdown-toggle shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-file-export me-1"></i> Reportes
                         </button>
-                        <!-- Menú con z-index alto para flotar sobre todo -->
                         <ul class="dropdown-menu shadow border-0" style="z-index: 1000; margin-top: 5px;">
-                            <!-- Exportación -->
                             <li><h6 class="dropdown-header text-uppercase small fw-bold">Exportar Archivos</h6></li>
                             <li><a class="dropdown-item" href="{{ url_for('main.exportar_excel') }}"><i class="fas fa-file-excel text-success me-2"></i> Excel (.xlsx)</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('main.exportar_pdf') }}"><i class="fas fa-file-pdf text-danger me-2"></i> PDF</a></li>
                             
                             <li><hr class="dropdown-divider"></li>
-                            
-                            <!-- Reportes en Pantalla -->
                             <li><h6 class="dropdown-header text-uppercase small fw-bold">Ver en Pantalla</h6></li>
                             <li><a class="dropdown-item" href="{{ url_for('main.reporte_salidas') }}">Salidas por Funcionario</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('main.reporte_por_item') }}">Salidas por Producto</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('main.reporte_top_productos_in') }}">Top Productos Agregados</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('main.reporte_top_productos_out') }}">Top Productos Salidos</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('main.reporte_por_subalmacen') }}">Por Subalmacén</a></li>
+
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header text-uppercase small fw-bold text-danger"><i class="fas fa-bell me-1"></i> Alertas</h6></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="{{ url_for('main.exportar_stock_critico_excel') }}">
+                                    <i class="fas fa-file-excel me-2"></i> Stock Crítico (Excel)
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="{{ url_for('main.exportar_stock_critico_pdf') }}">
+                                    <i class="fas fa-file-pdf me-2"></i> Stock Crítico (PDF)
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -57,10 +60,6 @@
         </div>
     </div>
 
-    <!-- 2. BARRA DE BÚSQUEDA -->
-    <!-- CORRECCIÓN CRÍTICA: Se eliminó 'position: relative' y 'z-index'. 
-         Al ser estático (default), cualquier elemento posicionado (como el encabezado de arriba) 
-         se dibujará AUTOMÁTICAMENTE por encima de esto. -->
     <div class="card shadow-sm mb-4">
         <div class="card-body">
             <form method="POST" class="row g-2 align-items-center">
@@ -84,7 +83,6 @@
         </div>
     </div>
 
-    <!-- 3. ALERTAS DE STOCK BAJO -->
     {% if alertas %}
     <div class="alert alert-warning shadow-sm mb-4 border-warning d-flex align-items-center" role="alert">
         <i class="fas fa-exclamation-triangle fa-2x me-3 text-warning"></i>
@@ -102,33 +100,50 @@
     </div>
     {% endif %}
 
-    <!-- 4. TARJETAS DE VALOR TOTAL -->
     <div class="row mb-4">
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="card border-0 shadow-sm h-100 bg-primary bg-gradient text-white">
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-uppercase text-white-50 mb-1">Valor Total SCPE</h6>
-                        <h3 class="fw-bold mb-0">Bs. {{ "%.2f"|format(productos | selectattr('subalmacen', 'equalto', 'SCPE') | map(attribute='total_value') | sum) }}</h3>
+                        <h3 class="fw-bold mb-0">
+                            Bs. {{ "{:,.2f}".format(productos | selectattr('subalmacen', 'equalto', 'SCPE') | map(attribute='total_value') | select('number') | sum) }}
+                        </h3>
                     </div>
                     <i class="fas fa-wallet fa-3x text-white-50"></i>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
+        
+        <div class="col-md-4">
             <div class="card border-0 shadow-sm h-100 bg-success bg-gradient text-white">
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-uppercase text-white-50 mb-1">Valor Total POZO 57</h6>
-                        <h3 class="fw-bold mb-0">Bs. {{ "%.2f"|format(productos | selectattr('subalmacen', 'equalto', 'POZO 57') | map(attribute='total_value') | sum) }}</h3>
+                        <h3 class="fw-bold mb-0">
+                            Bs. {{ "{:,.2f}".format(productos | selectattr('subalmacen', 'equalto', 'POZO 57') | map(attribute='total_value') | select('number') | sum) }}
+                        </h3>
                     </div>
                     <i class="fas fa-chart-line fa-3x text-white-50"></i>
                 </div>
             </div>
         </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 bg-info bg-gradient text-white">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase text-white-50 mb-1">Valor ALMACEN CENTRAL</h6>
+                        <h3 class="fw-bold mb-0">
+                            Bs. {{ "{:,.2f}".format(productos | selectattr('subalmacen', 'equalto', 'ALMACEN CENTRAL') | map(attribute='total_value') | select('number') | sum) }}
+                        </h3>
+                    </div>
+                    <i class="fas fa-building fa-3x text-white-50"></i>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- 5. TABLA DE PRODUCTOS -->
     <div class="card shadow-sm">
         <div class="card-header bg-white py-3 border-bottom">
             <h5 class="mb-0 fw-bold text-secondary"><i class="fas fa-list me-2"></i>Detalle de Inventario</h5>
@@ -162,8 +177,12 @@
                                     {{ producto.cantidad }}
                                 </span>
                             </td>
-                            <td class="text-end small">{{ "%.2f"|format(producto.precio) }}</td>
-                            <td class="text-end fw-bold small">{{ "%.2f"|format(producto.total_value) }}</td>
+                            <td class="text-end small">
+                                {{ "{:,.2f}".format(producto.precio or 0) }}
+                            </td>
+                            <td class="text-end fw-bold small">
+                                {{ "{:,.2f}".format(producto.total_value or 0) }}
+                            </td>
                             <td class="small text-muted">{{ producto.proveedor or '-' }}</td>
                             <td>
                                 <span class="badge bg-secondary">{{ producto.subalmacen }}</span>
